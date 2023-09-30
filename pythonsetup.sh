@@ -31,7 +31,7 @@ source venv/bin/activate
 # pip3 install -i venv <package-name>
 
 # Install Jupyter Notebook
-sudo pip3 install [jupyter](https://saturncloud.io/glossary/Jupyter)
+sudo pip3 install jupyter
 jupyter notebook
 
 
