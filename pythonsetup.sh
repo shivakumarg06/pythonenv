@@ -1,5 +1,6 @@
 /bin/bash
 
+# NgMNO9VAglGP3TYlTXUq
 # Python update and upgrade 
 sudo apt-get -y update  && sudo apt-get -y upgrade 
 
@@ -16,7 +17,7 @@ sudo apt install -y build-essential libssl-dev libffi-dev python3-dev
 sudo apt install -y python3.10-venv
 
 # Create a virtual environment
-python3 -m venv venv
+sudo python3 -m venv venv
 
 # Activate the virtual environment.
 source venv/bin/activate
@@ -31,8 +32,8 @@ source venv/bin/activate
 # pip3 install -i venv <package-name>
 
 # Install Jupyter Notebook
-sudo pip3 install jupyter
-jupyter notebook
+# sudo pip3 install jupyter
+# jupyter notebook
 
 
 # # JupyterLab
