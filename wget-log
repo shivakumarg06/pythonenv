@@ -1,6 +1,0 @@
---2023-11-14 13:17:43--  https://query1.finance.yahoo.com/v7/finance/download/HDFCBANK.NS?period1=1668451604
-Resolving query1.finance.yahoo.com (query1.finance.yahoo.com)... 69.147.92.12, 69.147.92.11, 2001:4998:14:800::1000, ...
-Connecting to query1.finance.yahoo.com (query1.finance.yahoo.com)|69.147.92.12|:443... connected.
-HTTP request sent, awaiting response... 403 Forbidden
-2023-11-14 13:17:43 ERROR 403: Forbidden.
-
