@@ -10,18 +10,11 @@ class OptionChain():
         self.__timeout = timeout
         self.__session.get("https://www.nseindia.com/option-chain", timeout=self.__timeout)
     
-    def fetch_data(self, expiry_date=None, starting_strike_price=None, number_of_rows=8):
+    def fetch_data(self):
         try:
             data = self.__session.get(url=self.__url, timeout=self.__timeout)
             data = data.json()
             df = json_normalize(data['records']['data'])
-            
-            if expiry_date is not None:
-                df = df[(df.expiryDate == expiry_date)]
-            
-            if starting_strike_price is not None:
-                df = df[(df.strikePrice >= starting_strike_price)][:number_of_rows]
-            
             return df
         
         except Exception as ex:
@@ -31,8 +24,8 @@ class OptionChain():
 
 if __name__ == "__main__":
     oc = OptionChain()
-    data = oc.fetch_data(expiry_date='10-Apr-2024', starting_strike_price=22500)
+    data = oc.fetch_data()
     if not data.empty:
-        print(data.iloc[0])
+        print(data)
     else:
         print("The DataFrame is empty.")
