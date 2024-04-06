@@ -1,0 +1,94 @@
+//@version=5
+strategy(title="TechnicalStrategyCraps", shorttitle="TechnicalCrap", overlay=true)
+
+// Constants colours that include fully non-transparent option.
+green100 = color.new(color.green, 100)
+lime100  = color.new(color.lime, 100)
+red100   = color.new(color.red, 100)
+blue100  = color.new(color.blue, 100)
+aqua100  = color.new(color.aqua, 100)
+darkred100 = color.new(color.red, 80)
+gray100 = color.new(color.gray, 100)
+
+// Use Alternate Anchor TF for MAs
+anchor       = input(0, "Use Alternate Anchor TimeFrame (0=none, max=1440mins)")
+LengthFast_  = input(8, "Fast T3MA length")
+VolFactorFast= input(0.7, "Fast T3 Volume Factor")
+LengthSlow__ = input(13, "Slow T3MA length")
+VolFactorSlow= input(0.6, "Slow T3 Volume Factor")
+ma_src       = input(close,title="T3MA Source")
+sBars        = input(false,title="Show Coloured Trend Bars")
+uGrabClr     = input(false,title="Use Grab Bar 6-tone Colours, instead of Standard 3-tone")
+ShowSwing    = input(false,title="Show Swing Alerts")
+dFilter      = input(false,title="Filter Alerts to Ribbon Colour")
+isHA         = input(true, "Use HA Candles for Calculations")
+
+open_   = request.security(syminfo.tickerid, "D", open)
+high_   = request.security(syminfo.tickerid, "D", high)
+low_    = request.security(syminfo.tickerid, "D", low)
+close_  = request.security(syminfo.tickerid, "D", close)
+ma_src_ = request.security(syminfo.tickerid, "D", ma_src)
+
+LengthSlow_    = (LengthSlow__-LengthFast_)<1 ? LengthFast_+1 : LengthSlow__
+mult =  timeframe.isintraday ? anchor==0 or timeframe.ismonthly or anchor>1440 ? 1 : na(anchor/timeframe.multiplier) ? na : (anchor/timeframe.multiplier)>1 ? math.ceil(anchor/timeframe.multiplier) : 1 : 1
+LengthFast = mult==1 ? LengthFast_ : (LengthFast_*mult)-1
+LengthSlow = mult==1 ? LengthSlow_ : (LengthSlow_*mult)-1
+
+// T3 Moving Average Calculation Function.
+T3MA(src, Length, VolFactor) =>
+    xe1 = ta.ema(src, Length)
+    xe2 = ta.ema(xe1, Length)
+    xe3 = ta.ema(xe2, Length)
+    xe4 = ta.ema(xe3, Length)
+    xe5 = ta.ema(xe4, Length)
+    xe6 = ta.ema(xe5, Length)
+    b = VolFactor
+    c1 = -b*b*b
+    c2 = 3*b*b+3*b*b*b
+    c3 = -6*b*b-3*b-3*b*b*b
+    c4 = 1+3*b+b*b*b+3*b*b
+    c1 * xe6 + c2 * xe5 + c3 * xe4 + c4 * xe3
+
+isRising(series) =>
+    series > series[1]
+
+// Get the two T3MAs
+t3maFast = T3MA(ma_src_, LengthFast, VolFactorFast)
+t3maSlow = T3MA(ma_src_, LengthSlow, VolFactorSlow)
+
+//Plot the Ribbon
+ma1=plot( t3maFast, color=isRising(t3maFast)?color.green:color.red, linewidth=1, transp=20, title="Fast t3ma")
+ma2=plot( t3maSlow, color=isRising(t3maSlow)?color.green:color.red, linewidth=1, transp=20, title="Slow t3ma")
+fcolor = t3maFast>t3maSlow?color.green:color.red
+fill(ma1,ma2,color=fcolor,transp=80,title="Ribbon Fill")
+
+// Colour bars according to the close position relative to the MA selected
+// Or Grab candle colour code bars according to the close position relative to the MA selected
+grabcol = close_>=open_ ? close_>t3maFast and close_>t3maSlow ? lime100 : close_<t3maFast and close_<t3maSlow ? red100 : aqua100 :
+          close_>t3maFast and close_>t3maSlow ? green100 : close_<t3maFast and close_<t3maSlow ? darkred100 : blue100
+stdcol  = close_>t3maFast and close_>t3maSlow ? lime100 : close_<t3maFast and close_<t3maSlow ? red100 : gray100
+
+barcolor(sBars ? uGrabClr ? grabcol : stdcol : na)
+
+// Generate Alert Arrows
+buy = 0
+sell = 0
+buyT = 0
+sellT = 0
+// Generate signal by Grab Candle Colour
+buy  := grabcol==lime100 ? nz(buy[1])+1 : grabcol==green100 ? nz(buy[1])>0 ? nz(buy[1])+1 : 0 : 0
+sell := grabcol==darkred100 ? nz(sell[1])+1 : grabcol==red100 ? nz(sell[1])>0 ? nz(sell[1])+1 : 0 : 0
+
+// Trend Filter
+buyT := buy==0 ? 0 : (dFilter and t3maFast<t3maSlow) ? 0 : nz(buyT[1])+1
+sellT := sell==0 ? 0 : (dFilter and t3maFast>t3maSlow) ? 0 : nz(sellT[1])+1
+
+// Exit conditions
+exitbuy  = nz(buyT[1])>0 and buyT==0
+exitsell = nz(sellT[1])>0 and sellT==0
+
+plotarrow(ShowSwing and buyT==1  ? 1 : na, title="BUY Swing Arrow", colorup=color.new(color.lime, 20), maxheight=60, minheight=50)
+plotarrow(ShowSwing and sellT==1 ? -1 : na, title="SELL Swing Arrow", colordown=color.new(color.red, 20), maxheight=60, minheight=50)
+
+plotshape(ShowSwing and exitbuy, title='BUY Exit', style=shape.xcross, location=location.belowbar, color=color.new(color.gray, 0), text="Exit\nBuy", offset=0)
+plotshape(ShowSwing and exitsell, title='Sell Exit', style=shape.xcross, location=location.abovebar, color=color.new(color.gray, 0), text="Exit\nSell", offset=0)

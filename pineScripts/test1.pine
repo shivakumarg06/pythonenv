@@ -1,0 +1,26 @@
+//@version=5
+strategy('EMA Cross Strategy', overlay=true)
+
+// Define the EMA periods
+fast_length = 9
+slow_length = 15
+
+// Define the stop-loss and take-profit levels
+stop_level = 1 // 1% stop loss
+profit_level = 2 // 2% take profit
+
+// Calculate the EMAs
+fast_ema = ta.ema(close, fast_length)
+slow_ema = ta.ema(close, slow_length)
+
+// Define the conditions for the strategy
+if ta.crossover(fast_ema, slow_ema)
+    strategy.entry('Buy', strategy.long)
+    strategy.exit('Sell', 'Buy', profit=profit_level, loss=stop_level)
+if ta.crossunder(fast_ema, slow_ema)
+    strategy.entry('Sell', strategy.short)
+    strategy.exit('Buy', 'Sell', profit=profit_level, loss=stop_level)
+
+// Plot the EMAs on the chart
+plot(fast_ema, color=color.new(color.red, 0))
+plot(slow_ema, color=color.new(color.blue, 0))

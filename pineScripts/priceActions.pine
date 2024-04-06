@@ -1,0 +1,41 @@
+//@version=5
+indicator("Price Action: Support, Resistance, Demand, Supply, and Bullish Engulfing", overlay=true)
+
+// Function to plot support and resistance levels
+plotSR(level, color, style) =>
+    line.new(x1=bar_index, y1=level, x2=bar_index-1, y2=level, color=color, width=2)
+
+// Function to plot demand and supply zones
+plotDSZone(start, end, color) =>
+    line.new(x1=start, y1=high, x2=end, y2=low, color=color, width=2)
+
+// Define support and resistance levels (you can customize these)
+support_level = 100
+resistance_level = 150
+
+// Plot support and resistance levels on chart
+plotSR(support_level, color.blue, line.style_solid)
+plotSR(resistance_level, color.red, line.style_solid)
+
+// Define demand and supply zones (you can customize these)
+demand_zone_start = bar_index - 120
+demand_zone_end = bar_index - 130
+supply_zone_start = bar_index - 140
+supply_zone_end = bar_index - 160
+
+// Plot demand and supply zones on chart
+plotDSZone(demand_zone_start, demand_zone_end, color.green)
+plotDSZone(supply_zone_start, supply_zone_end, color.red)
+
+// Calculate body and range of each candle
+candle_body = math.abs(close - open)
+candle_range = high - low
+
+// Define conditions for bullish engulfing pattern
+bullish_engulfing = close[1] < open[1] and close > open and open <= close[1] and close >= open[1]
+
+// Plot bullish engulfing pattern on chart
+plotshape(bullish_engulfing, style=shape.labelup, location=location.belowbar, color=color.green, text="Bullish Engulfing", size=size.small)
+
+// Highlight previous candle in the pattern
+barcolor(bullish_engulfing ? color.green : na)
