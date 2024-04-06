@@ -19,7 +19,6 @@ class OptionChain():
             df = json_normalize(data['records']['data'])
             return df
         
-        
         except Exception as ex:
             print('Error: {}'.format(ex))
             self.__session.get("https://www.nseindia.com/option-chain", timeout=self.__timeout)
@@ -30,9 +29,9 @@ if __name__ == "__main__":
     while True:
         data = oc.fetch_data()
         if not data.empty:
-            # Open the existing workbook and clear the contents of the first sheet
+            # Open the existing workbook and select the sheet "Data_Nifty"
             wb = xw.Book('nifty_option_chain_data.xlsx')
-            sheet = wb.sheets[0]
+            sheet = wb.sheets['Data_Nifty']
             sheet.clear_contents()
             # Write the data to the first cell
             sheet['A1'].options(index=False).value = data
