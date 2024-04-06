@@ -1,6 +1,8 @@
 import requests
 import pandas as pd
 from pandas import json_normalize
+import xlwings as xw
+import time
 
 class OptionChain():
     def __init__(self, symbol='NIFTY', timeout=5) -> None:
@@ -17,6 +19,7 @@ class OptionChain():
             df = json_normalize(data['records']['data'])
             return df
         
+        
         except Exception as ex:
             print('Error: {}'.format(ex))
             self.__session.get("https://www.nseindia.com/option-chain", timeout=self.__timeout)
@@ -24,8 +27,17 @@ class OptionChain():
 
 if __name__ == "__main__":
     oc = OptionChain()
-    data = oc.fetch_data()
-    if not data.empty:
-        print(data)
-    else:
-        print("The DataFrame is empty.")
+    while True:
+        data = oc.fetch_data()
+        if not data.empty:
+            # Open the existing workbook and clear the contents of the first sheet
+            wb = xw.Book('nifty_option_chain_data.xlsx')
+            sheet = wb.sheets[0]
+            sheet.clear_contents()
+            # Write the data to the first cell
+            sheet['A1'].options(index=False).value = data
+            wb.save()
+            print("Data has been written to 'nifty_option_chain_data.xlsx'")
+        else:
+            print("The DataFrame is empty.")
+        time.sleep(180)  # Wait for 3 minutes
