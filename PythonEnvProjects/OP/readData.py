@@ -16,6 +16,16 @@ def home():
     # Retrieve the unique expiry dates from the 'OptionChain' table
     expiry_dates = pd.read_sql_query("SELECT DISTINCT expiryDate FROM OptionChain", conn)
 
+    # Define your expiry date
+    selected_expiry_date = '2024-04-10'
+
+    # Filter the expiry_dates DataFrame to include only the selected expiry date
+    # expiry_dates = expiry_dates[expiry_dates['expiryDate'] == selected_expiry_date]
+
+
+    # Retrieve data from the 'OptionChain' table for the selected expiry date
+    df = pd.read_sql_query(f"SELECT * FROM OptionChain WHERE expiryDate = '{selected_expiry_date}' LIMIT {number_of_rows}", conn)
+    
     # Retrieve the unique underlyingValue from the 'OptionChain' table
     current_price = pd.read_sql_query("""SELECT DISTINCT "PE.underlyingValue" FROM OptionChain""", conn)
     # Check if the DataFrame is not empty

@@ -84,28 +84,6 @@
             }
         });
     </script>
-    <script>
-        window.addEventListener('load', function () {
-            var table = document.getElementById('data_table');
-            var headers = table.getElementsByTagName('th');
-            var columnIndex;
-            for (var i = 0; i < headers.length; i++) {
-                if (headers[i].textContent === 'Strike_Price') {
-                    columnIndex = i;
-                    break;
-                }
-            }
-            if (columnIndex !== undefined) {
-                var rows = table.getElementsByTagName('tr');
-                for (var i = 0; i < rows.length; i++) {
-                    var cells = rows[i].getElementsByTagName('td');
-                    if (cells.length > columnIndex) {
-                        cells[columnIndex].style.backgroundColor = 'lightblue';
-                    }
-                }
-            }
-        });
-    </script>
     <table id="zoneLevels">
         {{ zoneLevels | safe }}
     </table>
