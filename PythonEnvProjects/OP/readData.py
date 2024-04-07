@@ -183,14 +183,14 @@ def home():
     # Define a dictionary mapping the old column names to the new ones
     column_names = {
         "expiryDate": "Expiry",
-        "Positions_CE": "Positions_CE",
-        "Direction_CE": "Direction_CE",
+        "Positions_CE": "Positions CE",
+        "Direction_CE": "Direction CE",
         "CE.openInterest": "CE_OI",
         "CE.changeinOpenInterest": "CE_OI_C",
         "CE.impliedVolatility": "CE_IV",
         "CE.lastPrice": "CE_LTP",
         "CE.change": "CE_LTP_C",
-        "strikePrice": "Strike Price",
+        "strikePrice": "Strike_Price",
         "PE.openInterest": "PE_OI",
         "PE.changeinOpenInterest": "PE_OI_C",
         "PE.impliedVolatility": "PE_IV",
@@ -202,9 +202,10 @@ def home():
 
     # Create a copy of the DataFrame with renamed columns
     df_html = df.rename(columns=column_names)
+    
 
     # Render the HTML template with the data and expiry dates
-    return render_template('index.html', data=df_html.to_html(table_id='data_table'), current_price=current_price, expiry_dates=expiry_dates['expiryDate'].tolist(), zoneLevels=zoneLevels.to_html(table_id='zoneLevels'), total_open_interest=total_open_interest)
+    return render_template('index.html', data=df_html.to_html(table_id='data_table', index=False), current_price=current_price, expiry_dates=expiry_dates['expiryDate'].tolist(), zoneLevels=zoneLevels.to_html(table_id='zoneLevels', index=False), total_open_interest=total_open_interest)
     # return render_template('index.html', data=df.to_html(table_id='data_table'), current_price=current_price, expiry_dates=expiry_dates['expiryDate'].tolist(), zoneLevels=zoneLevels.to_html(table_id='zoneLevels'), total_open_interest=total_open_interest)
 
 if __name__ == "__main__":
