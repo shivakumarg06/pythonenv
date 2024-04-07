@@ -32,14 +32,6 @@
         {{ data|safe }}
     </div>
 
-    <table id="data-table">
-        {% for table in tables %}
-        {{ table|safe }}
-        {% endfor %}
-    </table>
-
-
-
     <script>
         document.getElementById('expiryDate').addEventListener('change', function () {
             var selectedDate = this.value;
