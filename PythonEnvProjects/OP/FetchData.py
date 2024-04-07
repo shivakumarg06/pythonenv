@@ -1,35 +1,27 @@
-from flask import Flask, render_template
-import pandas as pd
-import requests
-from pandas import json_normalize
+def fetch_data(self):
+    try:
+        response = self.__session.get(url=self.__url, timeout=self.__timeout)
+        response.raise_for_status()  # Raise an exception if the API request fails
+        data = response.json()
 
-app = Flask(__name__)
-
-class OptionChain():
-    def __init__(self, symbol='NIFTY', timeout=5) -> None:
-        self.__url = "https://www.nseindia.com/api/option-chain-indices?symbol={}".format(symbol)
-        self.__session = requests.Session()
-        self.__session.headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36", "Accept": "*/*", "Accept-Language": "en-US,en;q=0.9" }
-        self.__timeout = timeout
-        self.__session.get("https://www.nseindia.com/option-chain", timeout=self.__timeout)
-    
-    def fetch_data(self):
-        try:
-            data = self.__session.get(url=self.__url, timeout=self.__timeout)
-            data = data.json()
+        if 'records' in data and 'data' in data['records'] and data['records']['data']:
             df = json_normalize(data['records']['data'])
+
+            # Create a connection to the SQLite database
+            conn = sqlite3.connect('data.db')
+
+            # Save the DataFrame to the SQLite database as a table named 'OptionChain'
+            df.to_sql('OptionChain', conn, if_exists='replace')
+
+            # Close the connection to the SQLite database
+            conn.close()
+
             return df
-        
-        except Exception as ex:
-            print('Error: {}'.format(ex))
-            self.__session.get("https://www.nseindia.com/option-chain", timeout=self.__timeout)
+        else:
+            print('No data returned from the API')
             return pd.DataFrame()
 
-@app.route('/')
-def home():
-    oc = OptionChain()
-    data = oc.fetch_data()
-    return render_template('index.html', tables=[data.to_html(classes='data')], titles=data.columns.values)
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    except Exception as ex:
+        print('Error: {}'.format(ex))
+        self.__session.get("https://www.nseindia.com/option-chain", timeout=self.__timeout)
+        return pd.DataFrame()

@@ -18,9 +18,51 @@
 </head>
 
 <body>
-    {% for table in tables %}
-    {{ table|safe }}
-    {% endfor %}
+    <section>
+        <h2>Current Price: {{ current_price }}</h2>
+        <h2>Expiry Dates</h2>
+        <select id="expiryDate">
+            {% for date in expiry_dates %}
+            <option value="{{ date }}">{{ date }}</option>
+            {% endfor %}
+        </select>
+    </section>
+
+    <div id="data">
+        {{ data|safe }}
+    </div>
+
+    <table id="data-table">
+        {% for table in tables %}
+        {{ table|safe }}
+        {% endfor %}
+    </table>
+
+
+
+    <script>
+        document.getElementById('expiryDate').addEventListener('change', function () {
+            var selectedDate = this.value;
+            var rows = document.getElementById('data_table').getElementsByTagName('tr');
+            for (var i = 0; i < rows.length; i++) {
+                var expiryDateCell = rows[i].getElementsByTagName('td')[0];  // Assuming expiryDate is the first column
+                if (expiryDateCell) {
+                    var expiryDate = expiryDateCell.textContent;
+                    if (expiryDate === selectedDate) {
+                        rows[i].style.display = '';
+                    } else {
+                        rows[i].style.display = 'none';
+                    }
+                }
+            }
+        });
+    </script>
+
+    <table id="zoneLevels">
+        {{ zoneLevels | safe }}
+    </table>
+
+
 </body>
 
 </html>
