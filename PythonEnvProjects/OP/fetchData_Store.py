@@ -2,6 +2,8 @@ import requests
 import pandas as pd
 import sqlite3
 from pandas import json_normalize  # Corrected import statement
+import time
+from datetime import datetime
 
 # Fetch data from the NSE API.
 # Extract the Option Chain data, Underline_Value, and Expiry Date from the fetched data.
@@ -54,6 +56,14 @@ class OptionChain():
             self.__session.get("https://www.nseindia.com/option-chain", timeout=self.__timeout)
             return pd.DataFrame()
 
+
+
 # Create an instance of the OptionChain class and fetch data
 option_chain = OptionChain()
-option_chain.fetch_data()
+
+while True:
+    current_time = datetime.now().time()  # Get the current time
+    # Check if the current time is within the desired range
+    if current_time >= time(9, 15) and current_time <= time(15, 30):
+        option_chain.fetch_data()
+    time.sleep(300)  # Pause for 300 seconds (5 minutes)
