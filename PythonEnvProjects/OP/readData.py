@@ -36,11 +36,11 @@ def home():
     # df = df.sort_values('PE.underlyingValue')
 
     # Round current_price to the nearest 50
-    current_price = round(current_price / 50) * 50
+    current_price_df = round(current_price / 50) * 50
 
     # Calculate the upper and lower bounds for strikePrice
-    lower_bound = current_price - number_of_rows * 50
-    upper_bound = current_price + number_of_rows * 50
+    lower_bound = current_price_df - number_of_rows * 50
+    upper_bound = current_price_df + number_of_rows * 50
 
     # Filter the DataFrame to include only the rows where strikePrice is within the bounds
     df = df[df['strikePrice'].between(lower_bound, upper_bound)]
