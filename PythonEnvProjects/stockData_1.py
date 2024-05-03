@@ -3,17 +3,17 @@ import numpy as np
 import yfinance as yf
 
 
-# Function to download historical prices for stocks
 def download_historical_prices(tickers, start_date, end_date):
     historical_data = {}
     errors = {}
     for ticker in tickers:
-        # Check if the ticker symbol contains .NS
         if ".NS" not in ticker:
-            ticker += ".NS"  # Append .NS if it's not already present
+            ticker += ".NS"
         try:
             print(f"Downloading historical data for {ticker}...")
             data = yf.download(ticker, start=start_date, end=end_date)
+            # Resample to weekly data
+            data = data.resample("W").last()
             historical_data[ticker] = data
         except Exception as e:
             errors[ticker] = str(e)
