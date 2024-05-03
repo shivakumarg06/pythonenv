@@ -63,15 +63,22 @@ def backtest_trading_strategy(data):
     exit_index = data[data["Position"] == -1].index
     entry_prices = data.loc[entry_index, "Close"].values
     exit_prices = data.loc[exit_index, "Close"].values
+
     data["Entry_Price"] = np.nan
-    data["Exit_Price"] = np.nan
     data.loc[entry_index, "Entry_Price"] = entry_prices
+    data["Entry_Price"].ffill(inplace=True)
+
+    data["Exit_Price"] = np.nan
     data.loc[exit_index, "Exit_Price"] = exit_prices
+
     data["Entry_Time"] = np.nan
     data["Exit_Time"] = np.nan
     data.loc[entry_index, "Entry_Time"] = entry_index
     data.loc[exit_index, "Exit_Time"] = exit_index
-    data["Profit_Loss"] = data["Exit_Price"] - data["Entry_Price"]
+    # Calculate Profit_Loss only at the sell signals
+    data["Profit_Loss"] = np.where(
+        data["Signal"] == -1, data["Exit_Price"] - data["Entry_Price"], 0
+    )
     data["Total_Profit_Loss"] = data["Profit_Loss"].cumsum()
 
     return data
@@ -111,7 +118,7 @@ def plot_signals(data, ticker):
 
 
 # Main script
-tickers = ["COALINDIA.NS", "GRASIM.NS", "ONGC.NS", "APOLLOHOSP.NS", "HINDALCO.NS"]
+tickers = ["SWANENERGY.NS", "NTPC.NS", "VEDL.NS", "PFC.NS", "RECLTD.NS"]
 start_date = "2024-01-01"
 end_date = "2024-05-30"
 
@@ -128,11 +135,11 @@ for ticker in tickers:
 for ticker in tickers:
     data = pd.read_excel(f"{ticker}_technical_analysis.xlsx", index_col=0)
     data = perform_sentiment_analysis(data)
-    data.to_excel(f"{ticker}_sentiment_analysis.xlsx")
+    # data.to_excel(f"{ticker}_sentiment_analysis.xlsx")
 
 # Backtest trading strategy
 for ticker in tickers:
     data = pd.read_excel(f"{ticker}_sentiment_analysis.xlsx", index_col=0)
     data = backtest_trading_strategy(data)
-    data.to_excel(f"{ticker}_backtest_results.xlsx")
+    # data.to_excel(f"{ticker}_backtest_results.xlsx")
     plot_signals(data, ticker)
