@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 # Function to download historical prices for stocks
@@ -58,10 +59,18 @@ def backtest_trading_strategy(data):
     data["Cumulative_Returns"] = (1 + data["Returns"]).cumprod()
 
     # Calculate trade details
-    data["Entry_Price"] = data["Close"][data["Position"] == 1]
-    data["Exit_Price"] = data["Close"][data["Position"] == -1]
-    data["Entry_Time"] = data.index[data["Position"] == 1]
-    data["Exit_Time"] = data.index[data["Position"] == -1]
+    entry_index = data[data["Position"] == 1].index
+    exit_index = data[data["Position"] == -1].index
+    entry_prices = data.loc[entry_index, "Close"].values
+    exit_prices = data.loc[exit_index, "Close"].values
+    data["Entry_Price"] = np.nan
+    data["Exit_Price"] = np.nan
+    data.loc[entry_index, "Entry_Price"] = entry_prices
+    data.loc[exit_index, "Exit_Price"] = exit_prices
+    data["Entry_Time"] = np.nan
+    data["Exit_Time"] = np.nan
+    data.loc[entry_index, "Entry_Time"] = entry_index
+    data.loc[exit_index, "Exit_Time"] = exit_index
     data["Profit_Loss"] = data["Exit_Price"] - data["Entry_Price"]
     data["Total_Profit_Loss"] = data["Profit_Loss"].cumsum()
 
@@ -76,6 +85,7 @@ def plot_signals(data, ticker):
     plt.plot(
         data.index, data["MA_200"], label="200-Day MA", linestyle="--", color="red"
     )
+
     plt.scatter(
         data.index[data["Signal"] == 1],
         data["Close"][data["Signal"] == 1],
@@ -96,6 +106,7 @@ def plot_signals(data, ticker):
     plt.legend()
     plt.grid(True)
     plt.savefig(f"{ticker}_price_chart.png")
+    plt.plot(data["Profit_Loss"])
     plt.show()
 
 
