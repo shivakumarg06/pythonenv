@@ -2,8 +2,8 @@ import requests
 import pandas as pd
 import sqlite3
 from pandas import json_normalize  # Corrected import statement
-import time
-from datetime import datetime
+from datetime import datetime, time
+import time as time_module
 
 # Fetch data from the NSE API.
 # Extract the Option Chain data, Underline_Value, and Expiry Date from the fetched data.
@@ -31,6 +31,9 @@ class OptionChain():
             df = json_normalize(data['records']['data'])
             # print(df)
 
+            # Add a timestamp column
+            df['datetime'] = datetime.now()
+
             # underlyingValue = data['records']['underlyingValue']
             expiry_date = data['records']['expiryDates']
 
@@ -44,9 +47,11 @@ class OptionChain():
             conn = sqlite3.connect('data.db')
 
             # Save the extracted data to the SQLite database
-            df.to_sql('OptionChain', conn, if_exists='append')  # Changed 'replace' to 'append'
+            # df.to_sql('OptionChain', conn, if_exists='append')  # Changed 'replace' to 'append'
+            df.to_sql('OptionChain', conn, if_exists='append', index=False)  # Make sure to set index=False
 
-            # Close the connection to the SQLite database
+            # Save the extracted data to the SQLite database
+            
             conn.close()
 
             return df
@@ -64,6 +69,6 @@ option_chain = OptionChain()
 while True:
     current_time = datetime.now().time()  # Get the current time
     # Check if the current time is within the desired range
-    if current_time >= time(9, 15) and current_time <= time(15, 30):
-        option_chain.fetch_data()
-    time.sleep(300)  # Pause for 300 seconds (5 minutes)
+    # if current_time >= time(9, 15) and current_time <= time(15, 30):
+    #     option_chain.fetch_data()
+    time_module.sleep(300)  # Pause for 300 seconds (5 minutes)

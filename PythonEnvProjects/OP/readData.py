@@ -1,8 +1,22 @@
 from flask import Flask, render_template, request
+from flask_apscheduler import APScheduler
 import sqlite3
 import pandas as pd
+import subprocess
 
 app = Flask(__name__)
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
+
+def refresh_database():
+    # Run fetchData_Store.py
+    subprocess.run(["python", "fetchData_Store.py"], check=True)
+
+    conn = sqlite3.connect('data.db')
+    # Fetch and process data from the database
+    # ...
+    conn.close()
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -20,14 +34,15 @@ def home():
     selected_expiry_date = '2024-04-10'
 
     # Filter the expiry_dates DataFrame to include only the selected expiry date
-    # expiry_dates = expiry_dates[expiry_dates['expiryDate'] == selected_expiry_date]
+    expiry_dates = expiry_dates[expiry_dates['expiryDate'] == selected_expiry_date]
 
 
     # Retrieve data from the 'OptionChain' table for the selected expiry date
-    df = pd.read_sql_query(f"SELECT * FROM OptionChain WHERE expiryDate = '{selected_expiry_date}' LIMIT {number_of_rows}", conn)
+    # df = pd.read_sql_query(f"SELECT * FROM OptionChain WHERE expiryDate = '{selected_expiry_date}' LIMIT {number_of_rows}", conn)
     
     # Retrieve the unique underlyingValue from the 'OptionChain' table
-    current_price = pd.read_sql_query("""SELECT DISTINCT "PE.underlyingValue" FROM OptionChain""", conn)
+    # Assuming 'date' is your date or time column
+    current_price = pd.read_sql_query("""SELECT DISTINCT "PE.underlyingValue" FROM OptionChain ORDER BY datetime DESC LIMIT 1""", conn)
     # Check if the DataFrame is not empty
     if not current_price.empty:
         # Get the first value
@@ -43,6 +58,7 @@ def home():
     # Retrieve the data from the 'OptionChain' table
     df = pd.read_sql_query("""SELECT expiryDate, "Positions_CE", "Direction_CE", "CE.openInterest", "CE.changeinOpenInterest", "CE.impliedVolatility", "CE.lastPrice", "CE.change", "CE.impliedVolatility", "strikePrice", "PE.openInterest", "PE.changeinOpenInterest", "PE.impliedVolatility", "PE.lastPrice", "PE.change", "PE.impliedVolatility", "Direction_PE", "Positions_PE" FROM OptionChain""", conn)
 
+    
 
     # Define the conditions for 'Direction_CE'
     def calculate_direction(row):
@@ -222,3 +238,4 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
+scheduler.add_job(id='Database Refresh Job', func=refresh_database, trigger='interval', minutes=1)
