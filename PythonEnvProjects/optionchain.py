@@ -1,3 +1,4 @@
+# import
 from fyers_apiv3 import fyersModel
 import pandas as pd
 from fyers_apiv3.FyersWebsocket import data_ws
@@ -22,24 +23,17 @@ session = fyersModel.SessionModel(
     response_type=response_type,
     grant_type=grant_type,
 )
-
 # Generate the auth code using the session model
 response = session.generate_authcode()
 # Print the auth code received in the response
 print(response)
-
-
 auth_code = "auth code received in the response paste here"
-
-
 # Set the authorization code in the session object
 session.set_token(auth_code)
 # Generate the access token using the authorization code
 response = session.generate_token()
 # Print the response, which should contain the access token and other details
 print(response)
-
-
 df = pd.DataFrame()
 df = response
 tk = df["access_token"]
@@ -47,8 +41,6 @@ tk = df["access_token"]
 fyers = fyersModel.FyersModel(
     client_id=client_id, is_async=False, token=tk, log_path=""
 )
-
-
 # variables
 buypos = 0
 sellpos = 0
@@ -85,11 +77,9 @@ def getdata(sym, res, rfrom, rto):
         "range_to": rto,
         "cont_flag": "0",
     }
-
     response = fyers.history(data=cdata)
     data = pd.DataFrame.from_dict(response["candles"])
     cols = ["datetime", "open", "high", "low", "close", "volume"]
-
     data.columns = cols
     data["datetime"] = pd.to_datetime(data["datetime"], unit="s")
     data["datetime"] = (
@@ -132,7 +122,6 @@ def onmessage(message):
     #     ema = emadata['ema'].iloc[-2]
     #     l =  emadata['low'].iloc[-2]
     print(f"{message}")
-
     if (
         emadata5["close"].iloc[row] > emadata5["ema"].iloc[row]
         and emadata5["high"].iloc[row] > emadata5["ema"].iloc[row]

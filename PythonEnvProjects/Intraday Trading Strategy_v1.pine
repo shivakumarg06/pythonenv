@@ -1,0 +1,91 @@
+//@version=5
+indicator(title="MACD and T3MA Ribbon", shorttitle="MACD+T3RIBBON", timeframe="", timeframe_gaps=true)
+
+
+
+// T3MA Ribbon Calculation
+anchor       = input.int(0,minval=0,maxval=1440,title="Use Alternate Anchor TimeFrame (0=none, max=1440mins)")
+LengthFast_  = input.int(8, minval=1,title="Fast T3MA length")
+VolFactorFast= input.float(0.7,minval=0.0,maxval=1.0,title="Fast T3 Volume Factor")
+LengthSlow__ = input.int(13, minval=2,title="Slow T3MA length")
+VolFactorSlow= input.float(0.6,minval=0.0,maxval=1.0,title="Slow T3 Volume Factor")
+ma_src       = input(close,title="T3MA Source")
+sBars        = input(false,title="Show Coloured Trend Bars")
+uGrabClr     = input(false,title="Use Grab Bar 6-tone Colours, instead of Standard 3-tone")
+ShowSwing    = input(false,title="Show Swing Alerts")
+dFilter      = input(false,title="Filter Alerts to Ribbon Colour")
+
+LengthSlow_    = (LengthSlow__-LengthFast_)<1 ? LengthFast_+1 : LengthSlow__
+mult =  anchor == 0 or timeframe.multiplier <= 0 or timeframe.multiplier >= anchor or anchor > 1440 ? 1 : timeframe.multiplier > 1 ? timeframe.multiplier : 1
+mult := not (anchor == 0 or timeframe.multiplier <= 0 or timeframe.multiplier >= anchor or anchor > 52) ? timeframe.multiplier > 1 ? timeframe.multiplier : 1 : mult 
+
+LengthFast = mult == 1 ? LengthFast_ : (LengthFast_ * mult) - 1
+LengthSlow = mult == 1 ? LengthSlow_ : (LengthSlow_ * mult) - 1
+
+T3MA(src, Length, VolFactor) =>
+    xe1 = ta.ema(src, Length)
+    xe2 = ta.ema(xe1, Length)
+    xe3 = ta.ema(xe2, Length)
+    xe4 = ta.ema(xe3, Length)
+    xe5 = ta.ema(xe4, Length)
+    xe6 = ta.ema(xe5, Length)
+    b = VolFactor
+    c1 = -b*b*b
+    c2 = 3*b*b+3*b*b*b
+    c3 = -6*b*b-3*b-3*b*b*b
+    c4 = 1+3*b+b*b*b+3*b*b
+    c1 * xe6 + c2 * xe5 + c3 * xe4 + c4 * xe3
+
+var buy = 0
+var sell = 0
+var buyT = 0
+var sellT = 0
+
+t3maFast = T3MA(ma_src, LengthFast, VolFactorFast)
+t3maSlow = T3MA(ma_src, LengthSlow, VolFactorSlow)    
+
+ma1=plot( t3maFast,color=ta.rising(t3maFast,2)?color.new(color.green, 90):color.new(color.red, 90),linewidth=1,title="Fast t3ma")
+ma2=plot( t3maSlow,color=ta.rising(t3maSlow,2)?color.new(color.green, 90):color.new(color.red, 90),linewidth=1,title="Slow t3ma")
+fcolor = t3maFast > t3maSlow ? color.new(color.green, 80) : color.new(color.red, 80)
+fill(ma1, ma2, color=fcolor, title="Ribbon Fill")
+
+grabcol = close >= open ? close > t3maFast and close > t3maSlow ? color.new(color.green, 100) : close < t3maFast and close < t3maSlow ? color.new(color.red, 100) : color.new(color.aqua, 100) : close > t3maFast and close > t3maSlow ? color.new(color.green, 100) : close < t3maFast and close < t3maSlow ? color.new(color.blue, 100) : color.new(color.blue, 100)
+stdcol  = close > t3maFast and close > t3maSlow ? color.new(color.green, 100) : close < t3maFast and close < t3maSlow ? color.new(color.red, 100) : color.new(color.gray, 100)
+
+barcolor(sBars ? uGrabClr ? grabcol : stdcol : na)
+
+buy := grabcol == color.new(color.green, 100) ? (nz(buy[1]) + 1) : grabcol == color.new(color.green, 80) ? (nz(buy[1]) > 0 ? nz(buy[1]) + 1 : 0) : 0
+sell := grabcol == color.new(color.blue, 100) ? (nz(sell[1]) + 1) : grabcol == color.new(color.red, 100) ? (nz(sell[1]) > 0 ? nz(sell[1]) + 1 : 0) : 0
+
+buyT := buy == 0 ? 0 : (dFilter and t3maFast < t3maSlow) ? 0 : nz(buyT[1]) + 1
+sellT := sell == 0 ? 0 : (dFilter and t3maFast > t3maSlow) ? 0 : nz(sellT[1]) + 1
+
+exitbuy = nz(buyT[1]) > 0 and buyT == 0
+exitsell = nz(sellT[1]) > 0 and sellT == 0
+
+plotarrow(ShowSwing and buyT == 1 ? 1 : na, title="BUY Swing Arrow", colorup=color.new(color.lime, 80), maxheight=60, minheight=50)
+plotarrow(ShowSwing and sellT == 1 ? -1 : na, title="SELL Swing Arrow", colordown=color.new(color.red, 80), maxheight=60, minheight=50)
+
+plotshape(ShowSwing and exitbuy, title='BUY Exit', style=shape.xcross, location=location.belowbar, color=color.new(color.gray, 100), text="Exit\nBuy", offset=0)
+plotshape(ShowSwing and exitsell, title='Sell Exit', style=shape.xcross, location=location.abovebar, color=color.new(color.gray, 100), text="Exit\nSell", offset=0)
+
+hline(0, "Zero Line", color = color.new(#787B86, 50))
+plot(hist, title = "MACD Histogram", style = plot.style_columns, color = (hist >= 0 ? (hist[1] < hist ? color.new(color.green, 90) : color.new(color.red, 90)) : (hist[1] < hist ? color.new(color.red, 90) : color.new(color.green, 90))))
+plot(macd,   title = "MACD",   color = color.new(#2962FF, 100))
+plot(signal, title = "MACD Signal", color = color.new(#FF6D00, 100))
+
+// MACD Calculation
+fast_length = input.int(title = "MACD Fast Length", defval = 12, minval = 1)
+slow_length = input.int(title = "MACD Slow Length", defval = 26, minval = 1)
+macd_src = input(title = "MACD Source", defval = close)
+signal_length = input.int(title = "MACD Signal Smoothing",  minval = 1, defval = 9)
+sma_macd = input.string(title = "MACD MA Type",  defval = "EMA", options = ["SMA", "EMA"])
+
+fast_ma = sma_macd == "SMA" ? ta.sma(macd_src, fast_length) : ta.ema(macd_src, fast_length)
+slow_ma = sma_macd == "SMA" ? ta.sma(macd_src, slow_length) : ta.ema(macd_src, slow_length)
+macd = fast_ma - slow_ma
+signal = ta.ema(macd, signal_length)
+hist = macd - signal
+
+alertcondition(hist[1] >= 0 and hist < 0, title = 'MACD Histogram: Rising to Falling', message = 'The MACD histogram switched from a rising to falling state')
+alertcondition(hist[1] <= 0 and hist > 0, title = 'MACD Histogram: Falling to Rising', message = 'The MACD histogram switched from a falling to rising state')
