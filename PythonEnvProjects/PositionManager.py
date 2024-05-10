@@ -1,13 +1,9 @@
 class Position:
-    def __init__(self, symbol, entry_price, entry_time, position_type):
-        self.symbol = symbol
+    def __init__(self, position_type, entry_price, entry_time, exit_price):
+        self.position_type = position_type
         self.entry_price = entry_price
         self.entry_time = entry_time
-        self.position_type = position_type
-        self.stop_loss = None
-        self.take_profit = None
-        self.exit_price = None
-        self.exit_time = None
+        self.exit_price = exit_price
 
     def set_stop_loss(self, stop_loss):
         self.stop_loss = stop_loss
@@ -20,6 +16,12 @@ class Position:
 
     def update_exit_time(self, exit_time):
         self.exit_time = exit_time
+
+    def calculate_profit_loss(self):
+        if self.position_type == "Long":
+            return self.exit_price - self.entry_price
+        elif self.position_type == "Short":
+            return self.entry_price - self.exit_price
 
 
 class PositionManager:
