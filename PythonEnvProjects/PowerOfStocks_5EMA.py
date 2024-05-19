@@ -33,7 +33,7 @@ target = 0
 cstrike = ""
 pstrike = ""
 row = -2
-expiry = "NSE:BANKNIFTY24508"
+expiry = "NSE:BANKNIFTY24522"
 sym = "NSE:NIFTYBANK-INDEX"
 gain = 0
 fmflag = 0
@@ -296,3 +296,6 @@ fyersdata = data_ws.FyersDataSocket(
 )
 # Establish a connection to the Fyers WebSocket
 fyersdata.connect()
+
+
+time.sleep(60)
