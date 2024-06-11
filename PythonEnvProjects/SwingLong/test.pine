@@ -1,0 +1,40 @@
+//@version=4
+strategy("My Custom Strategy", overlay=true)
+
+// EMA's
+ema9 = ema(close, 9)
+ema15 = ema(close, 15)
+ema200 = ema(close, 200)
+
+// VWMA
+vwma30 = vwma(close, 30)
+
+// MACD
+[macdLine, signalLine, hist] = macd(close, 24, 52, 9)
+
+// Stoch RSI
+[stochK, stochD] = stochrsi(close, 140, 140, 10)
+
+// Entry conditions
+longCondition = crossover(ema9, ema15) and crossover(macdLine, signalLine) and stochK < 20
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+// Exit conditions
+exitCondition = crossunder(macdLine, signalLine)
+if (exitCondition)
+    strategy.close("Long")
+
+// Alerts
+alertcondition(longCondition, title="Long Entry", message="The conditions for a long entry have been met.")
+alertcondition(exitCondition, title="Long Exit", message="The conditions for a long exit have been met.")
+
+plot(ema9, title="EMA 9", color=color.red)
+plot(ema15, title="EMA 15", color=color.green)
+plot(ema200, title="EMA 200", color=color.blue)
+plot(vwma30, title="VWMA 30", color=color.purple)
+plot(macdLine, title="MACD Line", color=color.orange)
+plot(signalLine, title="Signal Line", color=color.yellow)
+plot(hist, title="MACD Histogram", color=color.gray, style=plot.style_histogram)
+plot(stochK, title="Stoch K", color=color.pink)
+plot(stochD, title="Stoch D", color=color.brown)

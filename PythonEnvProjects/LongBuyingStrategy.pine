@@ -1,0 +1,70 @@
+//@version=5
+strategy("Priority Long Buy Strategy with Enhanced Filters", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// EMA Calculations
+fastEMA = ta.ema(close, 9)
+slowEMA = ta.ema(close, 15)
+
+// VWMA Calculation
+vwma = ta.vwma(close, 55)
+
+// MACD Calculation
+[macdLine, signalLine, hist] = ta.macd(close, 25, 52, 9)
+
+// Stochastic RSI Calculation
+k = ta.stoch(close, high, low, 14)
+d = ta.sma(k, 3)
+
+// EMA 200
+ema200 = ta.ema(close, 200)
+
+// Additional Filters
+minVolume = input(1000000, "Minimum Average Daily Volume")
+
+// Trend Filter
+trendEMA = ta.ema(close, 200)
+
+// Volume Filter
+volumeFilter = ta.sma(volume, 20) > minVolume
+
+
+
+// Entry Conditions
+emaCrossUp = ta.crossover(fastEMA, slowEMA)
+vwmaCondition = close > vwma
+macdCrossUp = ta.crossover(macdLine, signalLine)
+
+// Count the number of conditions that are true
+conditionCount = ta.barssince(emaCrossUp) == 0 ? 1 : 0 + ta.barssince(vwmaCondition) == 0 ? 1 : 0 + ta.barssince(macdCrossUp) == 0 ? 1 : 0
+
+
+
+
+// Combined Entry Condition
+entryCondition = conditionCount >= 2 and volumeFilter and (close > ema200)
+
+// Track EMA crossover state
+emaCrossUnder = ta.crossunder(fastEMA, slowEMA)
+
+// Wait for VWMA crossover after EMA crossover for exit
+exitCondition = ta.crossover(vwma, fastEMA) and emaCrossUnder
+
+// Plotting Indicators
+plot(fastEMA, color=color.blue, title="Fast EMA (9)")
+plot(slowEMA, color=color.red, title="Slow EMA (15)")
+plot(vwma, color=color.green, title="VWMA (55)")
+plot(macdLine, color=color.orange, title="MACD Line")
+plot(signalLine, color=color.purple, title="Signal Line")
+plot(hist, color=color.blue, style=plot.style_histogram, title="MACD Histogram")
+plot(ema200, color=color.gray, title="EMA 200")
+
+// Plot buy/sell signals on the chart
+plotshape(series=entryCondition, location=location.belowbar, color=color.green, style=shape.labelup, text="Buy", title="Buy Signal")
+plotshape(series=exitCondition, location=location.abovebar, color=color.red, style=shape.labeldown, text="Sell", title="Sell Signal")
+
+// Strategy Execution
+if (entryCondition)
+    strategy.entry("Long", strategy.long)
+
+if (exitCondition)
+    strategy.close("Long")

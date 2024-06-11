@@ -1,0 +1,23 @@
+//@version=4
+study("My Custom Scanner", overlay=true)
+
+// EMA's
+ema9 = ema(close, 9)
+ema15 = ema(close, 15)
+ema200 = ema(close, 200)
+
+// MACD
+[macdLine, signalLine, hist] = macd(close, 24, 52, 9)
+
+// Stoch RSI
+[stochK, stochD] = stochrsi(close, 140, 140, 10)
+
+// Entry conditions
+longCondition = crossover(ema9, ema15) and crossover(macdLine, signalLine) and stochK < 20
+
+// Exit conditions
+exitCondition = crossunder(macdLine, signalLine)
+
+// Plotting
+plotshape(series=longCondition, title="Long Entry", location=location.belowbar, color=color.green, style=shape.labelup, text="Long")
+plotshape(series=exitCondition, title="Long Exit", location=location.abovebar, color=color.red, style=shape.labeldown, text="Exit")
