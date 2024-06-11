@@ -17,12 +17,9 @@ def calculate_indicators(df):
     df["EMA9"] = ta.trend.ema_indicator(df["Close"], window=9)
     df["EMA15"] = ta.trend.ema_indicator(df["Close"], window=15)
     df["EMA200"] = ta.trend.ema_indicator(df["Close"], window=200)
-    df["MACD"] = ta.trend.MACD(
-        df["Close"], window_slow=52, window_fast=24, window_sign=9
-    ).macd()
-    df["MACD Signal"] = ta.trend.MACD(
-        df["Close"], window_slow=52, window_fast=24, window_sign=9
-    ).macd_signal()
+    macd = ta.trend.MACD(df["Close"], window_slow=52, window_fast=24, window_sign=9)
+    df["MACD"] = macd.macd()
+    df["MACD Signal"] = macd.macd_signal()
     df["RSI"] = ta.momentum.rsi(df["Close"], window=140)
     df["Stoch RSI"] = ta.momentum.stochrsi(
         df["RSI"], window=140, smooth1=10, smooth2=10
@@ -31,31 +28,13 @@ def calculate_indicators(df):
 
 
 def check_conditions(df):
-    # Initialize empty list to store results
-    results = []
-    # Loop through dataframe
-    for i in range(1, len(df)):
-        # Get current and previous row
-        row = df.iloc[i]
-        prev_row = df.iloc[i - 1]
-        # Check entry conditions
-        entry_condition = (
-            row["EMA9"] > row["EMA15"]
-            and row["MACD"] > row["MACD Signal"]
-            # and row["Stoch RSI"] < 20
-        )
-        # Check exit conditions
-        exit_condition = row["MACD"] < row["MACD Signal"]
-        # Append results
-        results.append(
-            {
-                "Date": row.name,
-                "Close": row["Close"],
-                "Entry": entry_condition,
-                "Exit": exit_condition,
-            }
-        )
-    return pd.DataFrame(results)
+    # Calculate entry and exit conditions
+    df["Entry"] = (df["EMA9"] > df["EMA15"]) & (df["MACD"] > df["MACD Signal"])
+    df["Exit"] = df["MACD"] < df["MACD Signal"]
+    # Create results dataframe
+    results_df = df[["Close", "Entry", "Exit"]].copy()
+    results_df["Date"] = df.index
+    return results_df
 
 
 def process_stock(symbol):
