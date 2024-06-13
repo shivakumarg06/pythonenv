@@ -103,6 +103,30 @@ class PaperTrader:
         )  # Total value of cash and positions
 
 
+class Trader:
+    def __init__(self, initial_balance):
+        self.balance = initial_balance
+        self.positions = {}
+
+    def buy(self, stock, price, quantity=1):
+        self.positions[stock] = quantity
+        self.balance -= price * quantity
+
+    def sell(self, stock, price, quantity=1):
+        self.positions[stock] -= quantity
+        self.balance += price * quantity
+
+    def value(self, prices):
+        total_value = self.balance
+        for stock, quantity in self.positions.items():
+            total_value += prices[stock] * quantity
+        return total_value
+
+
+# Instantiate trader
+trader = Trader(10000)
+
+
 def calculate_indicators(df):
     df["EMA9"] = ta.trend.ema_indicator(df["Close"], window=9)
     df["EMA15"] = ta.trend.ema_indicator(df["Close"], window=15)
@@ -160,16 +184,37 @@ def create_new_row(stock, price, conditions, bought=False):
     )
 
 
-def update_output(output, stock, price):
-    if stock in output["Stock"].values:  # Check if the stock has been bought before
+def update_output(output, stock, price, conditions, bought=False):
+    # If the stock is in the DataFrame, update its row
+    if stock in output["Stock"].values:
         output.loc[output["Stock"] == stock, "Current Price"] = price
         output.loc[output["Stock"] == stock, "Price Diff"] = (
             price - output.loc[output["Stock"] == stock, "Buy Price"]
         )
+        buy_price = output.loc[output["Stock"] == stock, "Buy Price"].values[0]
         output.loc[output["Stock"] == stock, "Price Diff %"] = (
-            (price - output.loc[output["Stock"] == stock, "Buy Price"])
-            / output.loc[output["Stock"] == stock, "Buy Price"]
+            (price - buy_price) / buy_price if buy_price != 0 else 0
         ) * 100
+        output.loc[output["Stock"] == stock, "Short-term Condition"] = conditions[
+            "short_term"
+        ]
+        output.loc[output["Stock"] == stock, "Long-term Condition"] = conditions[
+            "long_term"
+        ]
+        output.loc[output["Stock"] == stock, "Bought"] = bought
+    # If the stock is not in the DataFrame, create a new row for it
+    else:
+        new_row = {
+            "Stock": stock,
+            "Buy Price": price if bought else 0,
+            "Current Price": price,
+            "Price Diff": 0,
+            "Price Diff %": 0,
+            "Short-term Condition": conditions["short_term"],
+            "Long-term Condition": conditions["long_term"],
+            "Bought": bought,
+        }
+        output = output.append(new_row, ignore_index=True)
     return output
 
 
@@ -186,7 +231,6 @@ def print_positions(prices, trader):
 
 
 def main():
-    trader = PaperTrader()
     output = pd.DataFrame(
         columns=[
             "Date",
@@ -200,6 +244,12 @@ def main():
             "Long-term Condition",
         ]
     )
+    # Create a row for each stock with initial values
+    for stock in stocks:
+        conditions = {"short_term": False, "long_term": False}
+        new_row = create_new_row(stock, 0, conditions)
+        output = pd.concat([output, new_row], ignore_index=True)
+
     for stock in stocks:
         conditions = check_conditions(stock)
         price = get_current_price(stock)
@@ -209,17 +259,16 @@ def main():
             if stock not in trader.positions:
                 trader.buy(stock, price)
                 print(f"Bought {stock} at {price}.")
-                new_row = create_new_row(stock, price, conditions, bought=True)
+                output = update_output(output, stock, price, conditions, bought=True)
             else:
-                new_row = create_new_row(stock, price, conditions)
-            output = pd.concat([output, new_row], ignore_index=True)
+                output = update_output(output, stock, price, conditions)
         elif (
             not (conditions["short_term"] or conditions["long_term"])
             and stock in trader.positions
         ):
             trader.sell(stock, price)
             print(f"Sold {stock} at {price}.")
-            output = update_output(output, stock, price)
+            output = update_output(output, stock, price, conditions)
     prices = {symbol: get_current_price(symbol) for symbol in trader.positions.keys()}
     print_positions(prices, trader)
     output.to_excel(f"output_{date.today()}.xlsx")

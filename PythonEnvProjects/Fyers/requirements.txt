@@ -1,0 +1,12 @@
+numpy
+scipy
+scikit-learn
+statsmodels
+seaborn
+plotly
+dash
+pyalgotrade
+backtrader
+quantlib-python
+fyers-apiv3
+mplfinance
