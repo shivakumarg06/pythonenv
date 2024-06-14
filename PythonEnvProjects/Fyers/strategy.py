@@ -78,19 +78,12 @@ def calculate_rsi_with_ema_signals(
     signals["signal"] = 0.0
 
     # Assign the signals to the appropriate rows in the new DataFrame
-    signals.iloc[ema_long_period:, signals.columns.get_loc("signal")] = np.where(
+    signals["signal"] = np.where(
         (
-            data["ema_short"].iloc[ema_long_period:]
-            > data["ema_long"].iloc[ema_long_period:]
-        )
-        & (data["rsi"].iloc[ema_long_period:] > rsi_threshold)
-        & (
-            data["MACD_line"].iloc[ema_long_period:]
-            > data["Signal_line"].iloc[ema_long_period:]
-        )
-        & (
-            data["CLOSE"].iloc[ema_long_period:]
-            > data["CLOSE"].rolling(window=50).mean().iloc[ema_long_period:]
+            (data["ema_short"] > data["ema_long"])
+            & (data["rsi"] > rsi_threshold)
+            & (data["MACD_line"] > data["Signal_line"])
+            & (data["CLOSE"] > data["CLOSE"].rolling(window=50).mean())
         ),
         1.0,
         0.0,

@@ -20,6 +20,8 @@ from strategy import (
     calculate_ema_crossover_signals,
     calculate_rsi_with_ema_signals,
 )
+from fyers_get_orders import FyersDataFetcher
+from fyers_execute_orders import place_market_order, place_cnc_market_order
 
 print(cd.client_id)
 
@@ -47,7 +49,6 @@ for symbol in symbols:
     if historical_data is None:
         print(f"Could not fetch historical data for symbol: {symbol}")
         continue
-
     # print(historical_data)
 
     # Process and save historical_data
@@ -55,105 +56,157 @@ for symbol in symbols:
     if processed_data is None:
         print(f"Could not process and save data for symbol: {symbol}")
         continue
-
     # print(processed_data)
 
-    # # Calculate EMA for the 'CLOSE' column
-    # ema = indicators.calculate_ema(processed_data["CLOSE"], window=14)
+    # Initialize the FyersModel instance
+    fyers = fyers_model.initialize_fyers_model()
 
-    # print(ema)
+    data = {
+        "symbol": "NSE:HATHWAY-EQ",
+        "qty": 1,
+        "type": 2,
+        "side": 1,
+        "productType": "INTRADAY",
+        "limitPrice": 0,
+        "stopPrice": 0,
+        "validity": "DAY",
+        "stopLoss": 0,
+        "takeProfit": 0,
+        "offlineOrder": False,
+        "disclosedQty": 0,
+    }
 
-    # # Calculate signals
-    # sma_crossover = calculate_sma_crossover_signals(processed_data)
+    place_market_order(fyers, data)
+    place_cnc_market_order(fyers, data)
+    place_limit_order(fyers, data)
+    place_stop_order(fyers, data)
+###############################################################################################################
 
-    # # Print data with signals
-    # print(sma_crossover)
+# # Calculate EMA for the 'CLOSE' column
+# ema = indicators.calculate_ema(processed_data["CLOSE"], window=14)
 
-    # # Calculate signals
-    # ema_crossover = calculate_ema_crossover_signals(
-    #     processed_data, short_window=9, long_window=13
-    # )
+# print(ema)
 
-    # # Print data with signals
-    # print(ema_crossover)
+# # Calculate signals
+# sma_crossover = calculate_sma_crossover_signals(processed_data)
 
-with pd.ExcelWriter("weekly_RSI_backtest_result.xlsx", engine="xlsxwriter") as writer:
-    # Assuming processed_data is a DataFrame containing the processed historical data
-    data = processed_data
+# # Print data with signals
+# print(sma_crossover)
 
-    # Calculate signals
-    stock_data = calculate_rsi_with_ema_signals(
-        data,
-        ema_short_period=9,
-        ema_long_period=15,
-        rsi_period=14,
-        rsi_threshold=50,
-        macd_fastperiod=12,
-        macd_slowperiod=26,
-        macd_signalperiod=9,
-    )
+# # Calculate signals
+# ema_crossover = calculate_ema_crossover_signals(
+#     processed_data, short_window=9, long_window=13
+# )
 
-    if stock_data is not None:
-        # Rename the columns to the format expected by mplfinance
-        stock_data.rename(
-            columns={
-                "OPEN": "Open",
-                "HIGH": "High",
-                "LOW": "Low",
-                "CLOSE": "Close",
-                "VOLUME": "Volume",  # If you have a volume column
-            },
-            inplace=True,
-        )
+# # Print data with signals
+# print(ema_crossover)
 
-        # Sort the DataFrame by date
-        stock_data.sort_index(inplace=True)
+###############################################################################################################
 
-        stock_data.to_excel(writer, sheet_name=symbol)
 
-        # Create a signal column (replace this with your actual signal calculation)
-        stock_data["Signal"] = stock_data["Close"].rolling(window=3).mean()
+# with pd.ExcelWriter("weekly_RSI_backtest_result.xlsx", engine="xlsxwriter") as writer:
+#     # Assuming processed_data is a DataFrame containing the processed historical data
+#     data = processed_data
 
-        # Create an exit signal column based on a 5-period EMA
-        stock_data["Exit_Signal"] = stock_data["Close"].ewm(span=5).mean()
+#     # Calculate signals
+#     stock_data = calculate_rsi_with_ema_signals(
+#         data,
+#         ema_short_period=9,
+#         ema_long_period=15,
+#         rsi_period=14,
+#         rsi_threshold=55,
+#         macd_fastperiod=12,
+#         macd_slowperiod=26,
+#         macd_signalperiod=9,
+#     )
 
-        # Create a custom market colors scheme
-        mc = mpf.make_marketcolors(up="g", down="r", inherit=True)
+#     if stock_data is not None:
+#         # Rename the columns to the format expected by mplfinance
+#         stock_data.rename(
+#             columns={
+#                 "OPEN": "Open",
+#                 "HIGH": "High",
+#                 "LOW": "Low",
+#                 "CLOSE": "Close",
+#                 "VOLUME": "Volume",  # If you have a volume column
+#             },
+#             inplace=True,
+#         )
 
-        # Create a custom style based on the market colors
-        s = mpf.make_mpf_style(marketcolors=mc)
+#         # Sort the DataFrame by date
+#         stock_data.sort_index(inplace=True)
 
-        # Create an additional plot for the signals
-        ap1 = mpf.make_addplot(
-            stock_data["Signal"],
-            panel=0,
-            type="scatter",
-            marker="o",
-            markersize=100,
-            color="blue",
-        )
+#         # Save the DataFrame to an Excel file
+#         stock_data.to_excel(writer, sheet_name=symbol)
 
-        # Create an additional plot for the exit signals
-        ap2 = mpf.make_addplot(
-            stock_data["Exit_Signal"],
-            panel=0,
-            type="scatter",
-            marker="x",
-            markersize=100,
-            color="red",
-        )
+#         # Calculate the signals based on your strategy
+#         stock_data["Signal"] = np.where(
+#             (
+#                 (stock_data["ema_short"] > stock_data["ema_long"])
+#                 & (stock_data["rsi"] > 55)
+#                 & (stock_data["MACD_line"] > stock_data["Signal_line"])
+#                 & (stock_data["Close"] > stock_data["Close"].rolling(window=50).mean())
+#             ),
+#             1.0,
+#             0.0,
+#         )
 
-        # Plot the candlestick chart with the additional plots
-        mpf.plot(
-            stock_data,
-            type="candle",
-            mav=(9, 15),
-            volume=True,
-            style=s,
-            addplot=[ap1, ap2],
-        )
+#         # Calculate the exit signals based on your strategy
+#         stock_data["Exit_Signal"] = np.where(
+#             stock_data["Close"] < stock_data["5_ema"], 1, 0
+#         )
 
-# print(initialize_fyersApi_historical_data(data))
+#         # Create a custom market colors scheme
+#         mc = mpf.make_marketcolors(up="g", down="r", inherit=True)
+
+#         # Create a custom style based on the market colors
+#         s = mpf.make_mpf_style(marketcolors=mc)
+
+#         # Create an additional plot for the buy signals
+#         ap1 = mpf.make_addplot(
+#             np.where(stock_data["Signal"] == 1, stock_data["Close"], np.nan),
+#             panel=0,
+#             type="scatter",
+#             marker="^",
+#             markersize=100,
+#             color="green",
+#         )
+
+#         # Create an additional plot for the sell signals
+#         ap2 = mpf.make_addplot(
+#             np.where(stock_data["Exit_Signal"] == 1, stock_data["Close"], np.nan),
+#             panel=0,
+#             type="scatter",
+#             marker="v",
+#             markersize=100,
+#             color="red",
+#         )
+
+#         # Plot the candlestick chart with the additional plots
+#         mpf.plot(
+#             stock_data,
+#             type="candle",
+#             mav=(9, 15),
+#             volume=True,
+#             style=s,
+#             addplot=[ap1, ap2],
+#         )
+
+#         import seaborn as sns
+#         import matplotlib.pyplot as plt
+
+#         # Calculate the correlation matrix
+#         corr = stock_data.corr()
+
+#         # Create a heatmap
+#         plt.figure(figsize=(10, 10))
+#         sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
+
+#         # Show the plot
+#         plt.show()
+
+###############################################################################################################
+#  # print(initialize_fyersApi_historical_data(data))
 
 
 # # List of stocks
