@@ -22,6 +22,7 @@ from strategy import (
 )
 from fyers_get_orders import FyersDataFetcher
 from fyers_execute_orders import place_market_order, place_cnc_market_order
+from simulated_order import simulate_order
 
 print(cd.client_id)
 
@@ -58,28 +59,12 @@ for symbol in symbols:
         continue
     # print(processed_data)
 
-    # Initialize the FyersModel instance
-    fyers = fyers_model.initialize_fyers_model()
+    # Calculate signals
+    sma_crossover = calculate_sma_crossover_signals(processed_data)
 
-    data = {
-        "symbol": "NSE:HATHWAY-EQ",
-        "qty": 1,
-        "type": 2,
-        "side": 1,
-        "productType": "INTRADAY",
-        "limitPrice": 0,
-        "stopPrice": 0,
-        "validity": "DAY",
-        "stopLoss": 0,
-        "takeProfit": 0,
-        "offlineOrder": False,
-        "disclosedQty": 0,
-    }
+    # Print data with signals
+    print(sma_crossover)
 
-    place_market_order(fyers, data)
-    place_cnc_market_order(fyers, data)
-    place_limit_order(fyers, data)
-    place_stop_order(fyers, data)
 ###############################################################################################################
 
 # # Calculate EMA for the 'CLOSE' column

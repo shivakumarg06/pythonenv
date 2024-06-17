@@ -21,6 +21,17 @@ def initialize_fyers_model():
         return None
 
 
+def get_socket_access_token(client_id):
+    try:
+        with open("F:\\GitHub\\pythonenv\\PythonEnvProjects\\access.txt", "r") as a:
+            access_token = a.read()
+        socket_access_token = f"{client_id}:{access_token}"
+        return socket_access_token
+    except Exception as e:
+        print(f"Error occurred while getting socket access token: {e}")
+        return None
+
+
 def initialize_fyersApi_historical_data(data):
     try:
         fyers = initialize_fyers_model()

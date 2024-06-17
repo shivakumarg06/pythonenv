@@ -7,6 +7,7 @@ with open('access.txt','r') as a:
 client_id = '5YKT940X4B-100'
 
 new_access_token=f"{client_id}:{access_token}"
+
 def onOrder(message):
     """
     Callback function to handle incoming messages from the FyersDataSocket WebSocket.
@@ -68,7 +69,7 @@ fyers = order_ws.FyersOrderSocket(
 # Establish a connection to the Fyers WebSocket
 fyers.connect()
 
-                
+
 # {
 #   "s":"ok",
 #   "orders":{
