@@ -46,12 +46,12 @@ def initialize_fyersApi_historical_data(data):
 
 def process_and_save_data(df):
     try:
-        df.columns = ["DATE", "OPEN", "HIGH", "LOW", "CLOSE", "VOLUME"]
-        df["DATE"] = pd.to_datetime(df["DATE"], unit="s")
-        df.DATE = df.DATE.dt.tz_localize("UTC").dt.tz_convert("Asia/Kolkata")
+        df.columns = ["Date", "Open", "High", "Low", "Close", "Volume"]
+        df["Date"] = pd.to_datetime(df["Date"], unit="s")
+        df.Date = df.Date.dt.tz_localize("UTC").dt.tz_convert("Asia/Kolkata")
         # print(df)
-        df["DATE"] = df["DATE"].dt.tz_localize(None)
-        df = df.set_index("DATE")
+        df["Date"] = df["Date"].dt.tz_localize(None)
+        df = df.set_index("Date")
         df.to_csv("data.csv")
         print(dt.datetime.now())
         return df

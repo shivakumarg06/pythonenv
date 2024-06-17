@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import pandas_ta as pta
 from indicators import calculate_sma
+from ta.trend import EMAIndicator, MACD
+from ta.momentum import StochasticOscillator
 
 
 def calculate_sma_crossover_signals(data, short_window=50, long_window=200):
@@ -99,3 +101,49 @@ def calculate_rsi_with_ema_signals(
     data["positions"] = data["signal"].diff()
 
     return data
+
+
+def calculate_signals(data):
+    # Calculate EMAs
+    data["5_EMA"] = EMAIndicator(close=data["Close"], window=5).ema_indicator()
+    data["20_EMA"] = EMAIndicator(close=data["Close"], window=20).ema_indicator()
+
+    # Calculate MACD
+    macd = MACD(close=data["Close"], window_slow=13, window_fast=6, window_sign=5)
+    data["MACD"] = macd.macd()
+    data["MACD_Signal"] = macd.macd_signal()
+    data["MACD_Hist"] = macd.macd_diff()
+
+    # Calculate Stochastic RSI
+    stoch = StochasticOscillator(
+        high=data["High"],
+        low=data["Low"],
+        close=data["Close"],
+        window=14,
+        smooth_window=3,
+    )
+    data["Stoch_RSI"] = stoch.stoch()
+    data["Stoch_RSI_Signal"] = stoch.stoch_signal()
+
+    # Generate buy signals for long calls (CE)
+    data["Call_Buy_Signal"] = np.where(
+        (data["5_EMA"] > data["20_EMA"])
+        & (data["MACD"] > data["MACD_Signal"])
+        & (data["Stoch_RSI"] > 20)
+        & (data["Stoch_RSI"] < 80)
+        & (data["Stoch_RSI"] > data["Stoch_RSI_Signal"]),
+        1,
+        0,
+    )
+
+    # Generate buy signals for long puts (PE)
+    data["Put_Buy_Signal"] = np.where(
+        (data["5_EMA"] < data["20_EMA"])
+        & (data["MACD"] < data["MACD_Signal"])
+        & (data["Stoch_RSI"] < 80)
+        & (data["Stoch_RSI"] > 20)
+        & (data["Stoch_RSI"] < data["Stoch_RSI_Signal"]),
+        1,
+        0,
+    )
+    return data  # data = calculate_signals(data)
