@@ -169,8 +169,8 @@ def place_cover_order(fyers, order_details):
         print(f"Error placing Cover order: {e}")
 
 
-def place_bracket_order(fyers, data):
-    data = {
+def place_bracket_order(fyers, order_details):
+    default_order = {
         "symbol": "NSE:NTPC-EQ",
         "qty": 1,
         "type": 2,
@@ -184,8 +184,10 @@ def place_bracket_order(fyers, data):
         "stopLoss": 5,
         "takeProfit": 5,
     }
+    # Update default values with user-provided values
+    order = {**default_order, **order_details}
     try:
-        response = fyers.place_order(data=data)
+        response = fyers.place_order(data=order)
         if response["code"] == 200:
             print(f"Bracket Order placed successfully: {response['order']}")
         else:
