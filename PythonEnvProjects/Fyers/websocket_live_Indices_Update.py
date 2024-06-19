@@ -18,81 +18,81 @@ token = get_socket_access_token(client_id)
 
 symbols = ["NSE:NIFTYBANK-INDEX"]
 
-while True:
-    for symbol in symbols:
-        data = {
-            "symbol": symbol,  # add the "NSE:" prefix and "-EQ" suffix to each symbol
-            "resolution": "5",
-            "date_format": "1",
-            "range_from": "2024-05-01",
-            "range_to": "2024-06-30",
-            "cont_flag": "1",
-        }
+# while True:
+for symbol in symbols:
+    data = {
+        "symbol": symbol,  # add the "NSE:" prefix and "-EQ" suffix to each symbol
+        "resolution": "5",
+        "date_format": "1",
+        "range_from": "2024-05-01",
+        "range_to": "2024-06-30",
+        "cont_flag": "1",
+    }
 
-        # Initialize historical_data
-        historical_data = fyers_model.initialize_fyersApi_historical_data(data)
-        if historical_data is None:
-            print(f"Could not fetch historical data for symbol: {symbol}")
-            continue
-        # print(historical_data)
+    # Initialize historical_data
+    historical_data = fyers_model.initialize_fyersApi_historical_data(data)
+    if historical_data is None:
+        print(f"Could not fetch historical data for symbol: {symbol}")
+        continue
+    # print(historical_data)
 
-        # Process and save historical_data
-        processed_data = fyers_model.process_and_save_data(historical_data)
-        if processed_data is None:
-            print(f"Could not process and save data for symbol: {symbol}")
-            continue
-        # print(processed_data)
+    # Process and save historical_data
+    processed_data = fyers_model.process_and_save_data(historical_data)
+    if processed_data is None:
+        print(f"Could not process and save data for symbol: {symbol}")
+        continue
+    # print(processed_data)
 
-        data = calculate_signals(processed_data)
-        # print(data)
+    data = calculate_signals(processed_data)
+    # print(data)
 
-        def calculate_atm_strike_price(data):
-            # Extract the current market price from the live data
-            current_market_price = data["Close"]
+    def calculate_atm_strike_price(data):
+        # Extract the current market price from the live data
+        current_market_price = data["Close"]
 
-            # Define the strike price increment
-            strike_price_increment = 50
+        # Define the strike price increment
+        strike_price_increment = 50
 
-            # Calculate the ATM strike price by rounding the current market price to the nearest strike price increment
-            atm_strike_price = (
-                round(current_market_price / strike_price_increment)
-                * strike_price_increment
-            )
+        # Calculate the ATM strike price by rounding the current market price to the nearest strike price increment
+        atm_strike_price = (
+            round(current_market_price / strike_price_increment)
+            * strike_price_increment
+        )
 
-            return atm_strike_price
+        return atm_strike_price
 
-        # signals = data
+    # signals = data
 
-        # Calculate ATM Strike price based on the live data
-        atm_strike_price = calculate_atm_strike_price(data)
-        # print(atm_strike_price)
+    # Calculate ATM Strike price based on the live data
+    atm_strike_price = calculate_atm_strike_price(data)
+    # print(atm_strike_price)
 
-        # Set the date and strike price
-        date_str = "24619"
-        # Set the target and stop loss points
-        target = 50
-        stop_loss = 20
+    # Set the date and strike price
+    date_str = "24619"
+    # Set the target and stop loss points
+    target = 50
+    stop_loss = 20
 
-        # Buy ATM Strike price for Long Call when Call_Buy_Signal is 1
-        if (data["Call_Buy_Signal"] == 1).any():
-            long_call_atm_strike_price = (
-                f"NSE:NIFTYBANK{date_str}{int(atm_strike_price.iloc[-1])}CE"
-            )
-            data["Long_Call_ATM_Strike_Price"] = long_call_atm_strike_price
-            data["Long_Call_Target"] = data["Close"] + target
-            data["Long_Call_Stop_Loss"] = data["Close"] - stop_loss
+    # Buy ATM Strike price for Long Call when Call_Buy_Signal is 1
+    if (data["Call_Buy_Signal"] == 1).any():
+        long_call_atm_strike_price = (
+            f"NSE:NIFTYBANK{date_str}{int(atm_strike_price.iloc[-1])}CE"
+        )
+        data["Long_Call_ATM_Strike_Price"] = long_call_atm_strike_price
+        data["Long_Call_Target"] = data["Close"] + target
+        data["Long_Call_Stop_Loss"] = data["Close"] - stop_loss
 
-        # Buy ATM Strike price for Long Put when Put_Buy_Signal is 1
-        if (data["Put_Buy_Signal"] == 1).any():
-            long_put_atm_strike_price = (
-                f"NSE:NIFTYBANK{date_str}{int(atm_strike_price.iloc[-1])}PE"
-            )
-            data["Long_Put_ATM_Strike_Price"] = long_put_atm_strike_price
-            data["Long_Put_Target"] = data["Close"] - target
-            data["Long_Put_Stop_Loss"] = data["Close"] + stop_loss
+    # Buy ATM Strike price for Long Put when Put_Buy_Signal is 1
+    if (data["Put_Buy_Signal"] == 1).any():
+        long_put_atm_strike_price = (
+            f"NSE:NIFTYBANK{date_str}{int(atm_strike_price.iloc[-1])}PE"
+        )
+        data["Long_Put_ATM_Strike_Price"] = long_put_atm_strike_price
+        data["Long_Put_Target"] = data["Close"] - target
+        data["Long_Put_Stop_Loss"] = data["Close"] + stop_loss
 
-        data.to_csv("signals.csv", index=True)
-        print(data)
+    data.to_csv("signals.csv", index=True)
+    print(data)
 
 
 # def onmessage(message):

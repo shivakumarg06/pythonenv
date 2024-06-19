@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pandas_ta as pta
 from indicators import calculate_sma
-from ta.trend import EMAIndicator, MACD
+from ta.trend import EMAIndicator, MACD, IchimokuIndicator
 from ta.momentum import StochasticOscillator
 from ta.trend import ADXIndicator
 
@@ -111,7 +111,7 @@ def calculate_signals(data):
 
     # Calculate ADX
     adx = ADXIndicator(
-        high=data["High"], low=data["Low"], close=data["Close"], window=7
+        high=data["High"], low=data["Low"], close=data["Close"], window=14
     )
     data["ADX"] = adx.adx()
 
@@ -132,26 +132,35 @@ def calculate_signals(data):
     data["Stoch_RSI"] = stoch.stoch()
     data["Stoch_RSI_Signal"] = stoch.stoch_signal()
 
+    # Calculate Ichimoku Cloud
+    ichimoku = IchimokuIndicator(
+        high=data["High"], low=data["Low"], window1=9, window2=26, window3=52
+    )
+    data["Ichimoku_a"] = ichimoku.ichimoku_a()
+    data["Ichimoku_b"] = ichimoku.ichimoku_b()
+
     # Generate buy signals for long calls (CE)
     data["Call_Buy_Signal"] = np.where(
-        (data["5_EMA"] > data["20_EMA"])
+        (data["Stoch_RSI"] > data["Stoch_RSI_Signal"])
         & (data["MACD"] > data["MACD_Signal"])
-        & (data["Stoch_RSI"] > 20)
-        & (data["Stoch_RSI"] < 80)
-        & (data["Stoch_RSI"] > data["Stoch_RSI_Signal"])
-        & (data["ADX"] > 25),
+        & (data["5_EMA"] > data["20_EMA"])
+        & (data["ADX"] > 25)
+        & (data["Close"] > data["Ichimoku_a"])  # New condition
+        & (data["Close"] > data["Ichimoku_b"])  # New condition
+        & (data["Ichimoku_a"] > data["Ichimoku_b"]),  # New condition
         1,
         0,
     )
 
     # Generate buy signals for long puts (PE)
     data["Put_Buy_Signal"] = np.where(
-        (data["5_EMA"] < data["20_EMA"])
-        & (data["MACD"] < data["MACD_Signal"])
-        & (data["Stoch_RSI"] < 80)
-        & (data["Stoch_RSI"] > 20)
-        & (data["Stoch_RSI"] < data["Stoch_RSI_Signal"])
-        & (data["ADX"] > 25),
+        (data["Stoch_RSI_Signal"] > data["Stoch_RSI"])
+        & (data["MACD_Signal"] > data["MACD"])
+        & (data["20_EMA"] > data["5_EMA"])
+        & (data["ADX"] > 25)
+        & (data["Close"] < data["Ichimoku_a"])  # New condition
+        & (data["Close"] < data["Ichimoku_b"])  # New condition
+        & (data["Ichimoku_b"] > data["Ichimoku_a"]),  # New condition
         1,
         0,
     )
