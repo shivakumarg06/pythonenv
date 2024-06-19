@@ -4,6 +4,7 @@ import pandas_ta as pta
 from indicators import calculate_sma
 from ta.trend import EMAIndicator, MACD
 from ta.momentum import StochasticOscillator
+from ta.trend import ADXIndicator
 
 
 def calculate_sma_crossover_signals(data, short_window=50, long_window=200):
@@ -108,6 +109,12 @@ def calculate_signals(data):
     data["5_EMA"] = EMAIndicator(close=data["Close"], window=5).ema_indicator()
     data["20_EMA"] = EMAIndicator(close=data["Close"], window=20).ema_indicator()
 
+    # Calculate ADX
+    adx = ADXIndicator(
+        high=data["High"], low=data["Low"], close=data["Close"], window=7
+    )
+    data["ADX"] = adx.adx()
+
     # Calculate MACD
     macd = MACD(close=data["Close"], window_slow=13, window_fast=6, window_sign=5)
     data["MACD"] = macd.macd()
@@ -131,7 +138,8 @@ def calculate_signals(data):
         & (data["MACD"] > data["MACD_Signal"])
         & (data["Stoch_RSI"] > 20)
         & (data["Stoch_RSI"] < 80)
-        & (data["Stoch_RSI"] > data["Stoch_RSI_Signal"]),
+        & (data["Stoch_RSI"] > data["Stoch_RSI_Signal"])
+        & (data["ADX"] > 25),
         1,
         0,
     )
@@ -142,7 +150,8 @@ def calculate_signals(data):
         & (data["MACD"] < data["MACD_Signal"])
         & (data["Stoch_RSI"] < 80)
         & (data["Stoch_RSI"] > 20)
-        & (data["Stoch_RSI"] < data["Stoch_RSI_Signal"]),
+        & (data["Stoch_RSI"] < data["Stoch_RSI_Signal"])
+        & (data["ADX"] > 25),
         1,
         0,
     )
